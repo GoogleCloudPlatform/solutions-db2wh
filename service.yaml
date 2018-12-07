@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: db2wh-ext
+  labels:
+    app: db2wh
+spec:
+  ports:
+  - port: 8443
+    name: console-https
+  - port: 50000
+    name: db
+  selector:
+    app: db2wh
+  type: LoadBalancer

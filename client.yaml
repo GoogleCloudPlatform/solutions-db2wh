@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: db2wh-client
+  labels:
+    app: db2wh
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: db2wh-client
+  template:
+    metadata:
+      labels:
+        app: db2wh-client
+    spec:
+      containers:
+      - name: db2wh-client
+        image: store/ibmcorp/db2wh_ce:v3.0.1-db2wh_client-linux
+        tty: true
+        volumeMounts:
+        - name: sample-data
+          mountPath: /nyc-wifi-locs.csv
+          subPath: nyc-wifi-locs.csv
+        - name: sample-data
+          mountPath: /sample-table.sql
+          subPath: sample-table.sql
+      imagePullSecrets:
+      - name: dockerstore
+      volumes:
+      - name: sample-data
+        configMap:
+          name: sample-data
+          items:
+          - key: nyc-wifi-locs.csv
+            path: nyc-wifi-locs.csv
+          - key: sample-table.sql
+            path: sample-table.sql

@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: db2wh
+spec:
+  podManagementPolicy: Parallel
+  selector:
+    matchLabels:
+      app: db2wh # has to match .spec.template.metadata.labels
+  serviceName: "db2wh"
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        app: db2wh # has to match .spec.selector.matchLabels
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: "app"
+                operator: In
+                values:
+                - db2wh
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: "app"
+                operator: In
+                values:
+                - db2wh
+            topologyKey: "kubernetes.io/hostname"
+      terminationGracePeriodSeconds: 5
+      containers:
+      - name: db2wh
+        image: store/ibmcorp/db2wh_ee:v2.12.0-db2wh-linux
+        ports:
+        - containerPort: 50022
+          name: ssh-automation
+        - containerPort: 50001
+          name: dbssl
+        - containerPort: 50000
+          name: db
+        - containerPort: 9929
+          name: test-comms
+        - containerPort: 9300
+          name: console-status
+        - containerPort: 8998
+          name: spark-livy
+        - containerPort: 8443
+          name: console-https
+        - containerPort: 5000
+          name: system-manager
+        - containerPort: 2379
+          name: ha-1
+        - containerPort: 2380
+          name: ha-2
+        - containerPort: 389
+          name: ldap
+        - containerPort: 22
+          name: ssh
+        readinessProbe:
+          httpGet:
+            port: console-https
+            scheme: HTTPS
+          initialDelaySeconds: 360
+          periodSeconds: 30
+        volumeMounts:
+        - name: clusterfs
+          mountPath: /mnt/bludata0
+        - name: clusterfs
+          mountPath: /mnt/blumeta0
+        - name: cgvol
+          mountPath: /sys/fs/cgroup
+          readOnly: true
+        securityContext:
+          privileged: true
+        tty: true
+      hostNetwork: true
+      imagePullSecrets:
+      - name: dockerstore
+      volumes:
+      - name: clusterfs
+        persistentVolumeClaim:
+          claimName: clusterfs
+      - name: cgvol
+        hostPath:
+          path: /sys/fs/cgroup

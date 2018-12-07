@@ -1,0 +1,34 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: nodes-config
+  labels:
+    app: db2wh
+spec:
+  template:
+    metadata:
+      labels:
+        app: db2wh
+    spec:
+      containers:
+      - name: nodes-config
+        image: alpine
+        command: ["cp", "/nodes", "/mnt/blumeta0/"]
+        volumeMounts:
+        - name: clusterfs
+          mountPath: /mnt/blumeta0
+        - name: db2wh-nodes
+          mountPath: /nodes
+          subPath: nodes
+      restartPolicy: Never
+      volumes:
+      - name: clusterfs
+        persistentVolumeClaim:
+          claimName: clusterfs
+      - name: db2wh-nodes
+        configMap:
+          name: db2wh-nodes
+          items:
+          - key: nodes
+            path: nodes
+  backoffLimit: 4
